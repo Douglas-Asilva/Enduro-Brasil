@@ -77,6 +77,24 @@ const Sound = {
     src.start(t); src.stop(t + 0.45);
   },
 
+  // Pancada de buraco: baque grave curto
+  thud() {
+    if (!this.ac) return;
+    const ac = this.ac, t = ac.currentTime;
+    const o = ac.createOscillator(); o.type = 'sine';
+    o.frequency.setValueAtTime(110, t); o.frequency.exponentialRampToValueAtTime(38, t + 0.18);
+    const g = ac.createGain();
+    g.gain.setValueAtTime(0.4, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
+    o.connect(g); g.connect(this.master);
+    o.start(t); o.stop(t + 0.25);
+    const src = ac.createBufferSource(); src.buffer = this.noise;
+    const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 500;
+    const ng = ac.createGain();
+    ng.gain.setValueAtTime(0.18, t); ng.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+    src.connect(lp); lp.connect(ng); ng.connect(this.master);
+    src.start(t); src.stop(t + 0.18);
+  },
+
   rain(level) {
     if (!this.rainGain) return;
     const v = Math.round(level * 20) / 20;          // só reagenda quando muda de verdade
@@ -107,6 +125,37 @@ const Sound = {
     g.gain.exponentialRampToValueAtTime(0.001, t + dur);
     o.connect(g); g.connect(this.master);
     o.start(t); o.stop(t + dur + 0.02);
+  },
+
+  // Muge (vaca: grave, com queda) ou relincho (cavalo: agudo, sobe e desce, trêmulo)
+  animal(kind, vol = 0.06) {
+    if (!this.ac) return;
+    const ac = this.ac, t = ac.currentTime;
+    const o = ac.createOscillator(); o.type = 'sawtooth';
+    const lp = ac.createBiquadFilter(); lp.type = 'lowpass';
+    const g = ac.createGain();
+    const f = o.frequency;
+    if (kind === 'vaca') {
+      lp.frequency.value = 420;
+      f.setValueAtTime(120, t); f.linearRampToValueAtTime(150, t + 0.25); f.linearRampToValueAtTime(95, t + 0.9);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(vol, t + 0.12);
+      g.gain.setValueAtTime(vol, t + 0.6);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.95);
+    } else {
+      lp.frequency.value = 1800;
+      f.setValueAtTime(520, t); f.linearRampToValueAtTime(980, t + 0.2); f.linearRampToValueAtTime(760, t + 0.45);
+      f.linearRampToValueAtTime(420, t + 0.8);
+      const lfo = ac.createOscillator(); lfo.frequency.value = 26;
+      const lg = ac.createGain(); lg.gain.value = vol * 0.45;
+      lfo.connect(lg); lg.connect(g.gain);
+      lfo.start(t); lfo.stop(t + 0.85);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(vol * 0.7, t + 0.08);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.85);
+    }
+    o.connect(lp); lp.connect(g); g.connect(this.master);
+    o.start(t); o.stop(t + 1);
   },
 
   jingle() { [523, 659, 784, 1047].forEach((f, i) => this.beep(f, 0.14, i * 0.12)); },

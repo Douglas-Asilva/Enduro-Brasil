@@ -40,7 +40,7 @@ const dayGoal = day => {
 const CARS = [
   { id: 'fusca', name: 'FUSCA', color: '#c8262b', desc: 'EQUILIBRADO E VALENTE',
     topKmh: 130, accel: 1.0, handling: 1.0, mass: 1.0, retain: 0.30, pitch: 1.0 },
-  { id: 'kombi', name: 'KOMBI', color: '#2a5bd7', desc: 'LENTA, MAS FIRME NA NEVE',
+  { id: 'kombi', name: 'KOMBI', color: '#2a5bd7', desc: 'LENTA, MAS FIRME NA LAMA',
     topKmh: 110, accel: 0.72, handling: 0.75, mass: 1.6, retain: 0.55, pitch: 0.8 },
   { id: 'brasilia', name: 'BRASÍLIA', color: '#f2c21b', desc: 'A MAIS VELOZ, PORÉM ARISCA',
     topKmh: 150, accel: 1.15, handling: 0.85, mass: 0.9, retain: 0.25, pitch: 1.15 },
@@ -54,41 +54,45 @@ const OPP_COLORS = ['#d03a2a', '#3a6ad8', '#e8c030', '#2fa04a', '#e8e8e8',
 // ================= Fases do dia =================
 // sun: posição horizontal (0..1) e elevação no início/fim da fase (1 = alto, <0 = abaixo do horizonte)
 // blend: segundos de transição para a fase seguinte; cloud: quantidade de nuvens; mist: neblina baixa
-const PHASES = [
-  { name: 'DIA', dur: 40, sun: { x: 0.34, e0: 0.9, e1: 1.8 }, skyT: '#3f7fe0', skyM: '#6aa2f0', skyB: '#8fc0ff', g1: '#2f8f2f', g2: '#2a822a', road: '#6f6f6f',
-    e1: '#ffffff', e2: '#d83a3a', m1: '#2e6a3a', m2: '#5f8fb0', cl: '#ffffff', cs: '#c8d8f0',
-    night: 0, fog: 0, snow: 0, mist: 0, cloud: 0.5 },
-  { name: 'NEVE', dur: 25, skyT: '#9fb8d8', skyM: '#c0d2e8', skyB: '#dfe9f5', g1: '#f4f7fc', g2: '#e2e9f3', road: '#9ba2ab',
-    e1: '#ffffff', e2: '#4a78c0', m1: '#dbe4f0', m2: '#b7c6da', cl: '#eef2f8', cs: '#b8c4d4',
-    night: 0, fog: 0, snow: 1, mist: 0, cloud: 0.8 },
-  { name: 'ENTARDECER', dur: 30, blend: 10, sun: { x: 0.64, e0: 0.95, e1: -0.2 },
-    skyT: '#2c1850', skyM: '#b8386a', skyB: '#ffb040', g1: '#5f6a20', g2: '#57611c', road: '#5b4f4a',
-    e1: '#ffe0b0', e2: '#c04020', m1: '#3a1834', m2: '#7a2c4c', cl: '#ffd070', cs: '#8a3060',
-    night: 0, fog: 0, snow: 0, mist: 0, cloud: 1 },
-  { name: 'NOITE', dur: 35, blend: 10, skyT: '#000008', skyM: '#02020f', skyB: '#05051a', g1: '#050805', g2: '#030503', road: '#0c0c0c',
-    e1: '#7a7a7a', e2: '#505050', m1: '#0a0a16', m2: '#10102a', cl: '#1a1a2a', cs: '#0a0a14',
-    night: 1, fog: 0, snow: 0, mist: 0, cloud: 0 },
-  { name: 'NEBLINA', dur: 20, skyT: '#8c8f94', skyM: '#9a9da2', skyB: '#a8abb0', g1: '#5f6f5f', g2: '#5a695a', road: '#6a6a6a',
-    e1: '#d0d0d0', e2: '#a0a0a0', m1: '#9a9da2', m2: '#a3a6ab', cl: '#b0b3b8', cs: '#9a9da2',
-    night: 0, fog: 1, snow: 0, mist: 0, cloud: 0 },
-  { name: 'AMANHECER', dur: 30, sun: { x: 0.34, e0: -0.2, e1: 0.9 },
-    skyT: '#34509a', skyM: '#d88ab0', skyB: '#ffd2a0', g1: '#3a7a44', g2: '#34703e', road: '#6a6670',
-    e1: '#ffffff', e2: '#d04a4a', m1: '#4a4a6a', m2: '#9a7aa8', cl: '#ffe0c8', cs: '#b070a0',
-    night: 0, fog: 0, snow: 0, mist: 0.45, cloud: 0.9 },
-];
-// Chuva: ocupa o lugar da neve nos dias fora da serra (mesma duração)
+// Chuva: 2ª fase do dia (nas paisagens secas, DRY_PHASE ocupa o lugar dela — mesma duração)
 const RAIN_PHASE = {
   name: 'CHUVA', dur: 25, skyT: '#3a414c', skyM: '#555d69', skyB: '#737b86', g1: '#2f5a34', g2: '#2b532f', road: '#3e4146',
   e1: '#d8d8d8', e2: '#b03a3a', m1: '#3c4a4a', m2: '#56606a', cl: '#6a727c', cs: '#454c56',
-  night: 0, fog: 0, snow: 0, mist: 0, rain: 1, cloud: 1,
+  night: 0, fog: 0, mist: 0, rain: 1, cloud: 1,
 };
-const PHASES_RAIN = PHASES.map(p => (p.name === 'NEVE' ? RAIN_PHASE : p));
+const PHASES = [
+  { name: 'DIA', dur: 40, sun: { x: 0.34, e0: 0.9, e1: 1.8 }, skyT: '#3f7fe0', skyM: '#6aa2f0', skyB: '#8fc0ff', g1: '#2f8f2f', g2: '#2a822a', road: '#6f6f6f',
+    e1: '#ffffff', e2: '#d83a3a', m1: '#2e6a3a', m2: '#5f8fb0', cl: '#ffffff', cs: '#c8d8f0',
+    night: 0, fog: 0, mist: 0, cloud: 0.5 },
+  RAIN_PHASE,
+  { name: 'ENTARDECER', dur: 30, blend: 10, sun: { x: 0.64, e0: 0.95, e1: -0.2 },
+    skyT: '#2c1850', skyM: '#b8386a', skyB: '#ffb040', g1: '#5f6a20', g2: '#57611c', road: '#5b4f4a',
+    e1: '#ffe0b0', e2: '#c04020', m1: '#3a1834', m2: '#7a2c4c', cl: '#ffd070', cs: '#8a3060',
+    night: 0, fog: 0, mist: 0, cloud: 1 },
+  { name: 'NOITE', dur: 35, blend: 10, skyT: '#000008', skyM: '#02020f', skyB: '#05051a', g1: '#050805', g2: '#030503', road: '#0c0c0c',
+    e1: '#7a7a7a', e2: '#505050', m1: '#0a0a16', m2: '#10102a', cl: '#1a1a2a', cs: '#0a0a14',
+    night: 1, fog: 0, mist: 0, cloud: 0 },
+  { name: 'NEBLINA', dur: 20, skyT: '#8c8f94', skyM: '#9a9da2', skyB: '#a8abb0', g1: '#5f6f5f', g2: '#5a695a', road: '#6a6a6a',
+    e1: '#d0d0d0', e2: '#a0a0a0', m1: '#9a9da2', m2: '#a3a6ab', cl: '#b0b3b8', cs: '#9a9da2',
+    night: 0, fog: 1, mist: 0, cloud: 0 },
+  { name: 'AMANHECER', dur: 30, sun: { x: 0.34, e0: -0.2, e1: 0.9 },
+    skyT: '#34509a', skyM: '#d88ab0', skyB: '#ffd2a0', g1: '#3a7a44', g2: '#34703e', road: '#6a6670',
+    e1: '#ffffff', e2: '#d04a4a', m1: '#4a4a6a', m2: '#9a7aa8', cl: '#ffe0c8', cs: '#b070a0',
+    night: 0, fog: 0, mist: 0.45, cloud: 0.9 },
+];
+// Sertão: o sol a pino ocupa o lugar da chuva — céu esbranquiçado, chão ressecado e miragem na pista (heat)
+const DRY_PHASE = {
+  name: 'SOL A PINO', dur: 25, skyT: '#5a9cf0', skyM: '#a8d0f8', skyB: '#f6ecd2', g1: '#c9a45a', g2: '#bf9a50', road: '#8c8478',
+  e1: '#ffffff', e2: '#d83a3a', m1: '#a06a48', m2: '#c89468', cl: '#fff8e8', cs: '#e8d8b8',
+  night: 0, fog: 0, mist: 0, cloud: 0.15, heat: 1,
+};
+const PHASES_DRY = PHASES.map(p => (p === RAIN_PHASE ? DRY_PHASE : p));
 
 const COLOR_KEYS = ['skyT', 'skyM', 'skyB', 'g1', 'g2', 'road', 'e1', 'e2', 'm1', 'm2', 'cl', 'cs'];
-const NUM_KEYS = ['night', 'fog', 'snow', 'mist', 'cloud', 'rain'];
+const NUM_KEYS = ['night', 'fog', 'mist', 'cloud', 'rain', 'heat'];
 const BLEND = 4;                    // transição padrão entre fases (s)
 const DAY_LEN = PHASES.reduce((s, p) => s + p.dur, 0);
-for (const ph of [...PHASES, RAIN_PHASE]) {
+for (const ph of [...PHASES, DRY_PHASE]) {
   ph.c = {};
   for (const k of COLOR_KEYS) ph.c[k] = hexToRgb(ph[k]);
   for (const k of NUM_KEYS) ph[k] = ph[k] || 0;
@@ -122,15 +126,17 @@ function getEnv(t, phases = PHASES) {
 }
 
 // ================= Paisagens =================
-// Cada dia tem uma paisagem (em ciclo). weather: o que ocupa a 2ª fase do dia (neve ou chuva).
+// Cada dia tem uma paisagem (em ciclo). weather: 'dry' troca a chuva (2ª fase do dia) pelo sol a pino.
 // layers: objetos da beira da estrada; cada camada é sorteada por "vaga" (a cada PROP_GAP) e por lado.
 //   chance: probabilidade por vaga; x: distância da pista [mín, máx] em faixas; every: só a cada N vagas
 const PROP_GAP = 40;
 const THEMES = [
-  { name: 'SERRA', weather: 'snow', horizon: 'mountains', tint: null,
+  // Estrada de terra: pista de lama com ruas de pneu e buracos (mud, holes — ver updateMud)
+  { name: 'TRANSAMAZÔNICA', weather: 'rain', horizon: 'jungle', tint: [[26, 66, 34], 0.86], mud: true, holes: true,
     layers: [
-      { chance: 0.55, x: [1.8, 3.4], types: [['arvore', 4], ['araucaria', 4]] },
-      { chance: 0.05, x: [1.8, 1.9], types: [['placa', 2], ['outdoor', 1]] },
+      { chance: 0.78, x: [1.35, 3.8], types: [['castanheira', 3], ['palmeira', 3], ['samambaia', 4]] },
+      { chance: 0.05, x: [1.5, 1.7], types: [['placaBR', 2], ['caminhaoAtolado', 1]] },
+      { chance: 0.04, x: [2.4, 3.2], types: [['casaPalafita', 1]] },
     ] },
   { name: 'LITORAL', weather: 'rain', horizon: 'sea', tint: [[222, 200, 150], 0.4],
     layers: [
@@ -154,9 +160,31 @@ const THEMES = [
       { chance: 0.4, x: [1.9, 3.6], types: [['ipe', 3], ['ipeRoxo', 2], ['arvore', 3]] },
       { chance: 0.05, x: [2.6, 3.2], types: [['casa', 3], ['placa', 1]] },
     ] },
+  // Vacas e cavalos andam pela pista (animals) — ver updateAnimals
+  { name: 'SERTÃO NORDESTINO', weather: 'dry', horizon: 'caatinga', tint: [[204, 152, 84], 0.8], animals: true,
+    layers: [
+      { chance: 0.34, x: [1.8, 3.6], types: [['mandacaru', 3], ['palma', 3], ['arvoreSeca', 3], ['arvoreSeca2', 3]] },
+      { chance: 1, every: 2, x: [1.55, 1.55], types: [['estaca', 1]] },
+      { chance: 0.06, x: [2.3, 3.2], types: [['casaTaipa', 3], ['cataVento', 2]] },
+      { chance: 0.05, x: [1.75, 1.85], types: [['placaGado', 1]] },
+    ] },
 ];
-const themeOfDay = day => (day - 1) % THEMES.length;
-const phasesOf = idx => (THEMES[idx].weather === 'rain' ? PHASES_RAIN : PHASES);
+// A paisagem de cada dia é sorteada de um "saco embaralhado": todas aparecem uma vez antes de qualquer
+// uma repetir (variedade garantida) e a última de um saco nunca é a primeira do seguinte
+let themeBag = [];
+const nextTheme = (last = -1) => {
+  if (!themeBag.length) {
+    themeBag = THEMES.map((_, i) => i);
+    for (let i = themeBag.length - 1; i > 0; i--) {
+      const j = (Math.random() * (i + 1)) | 0;
+      [themeBag[i], themeBag[j]] = [themeBag[j], themeBag[i]];
+    }
+    // o sorteio sai do fim do saco: se ele repetir a paisagem atual, troca com outra
+    if (themeBag.length > 1 && themeBag[themeBag.length - 1] === last) themeBag.unshift(themeBag.pop());
+  }
+  return themeBag.pop();
+};
+const phasesOf = idx => (THEMES[idx].weather === 'dry' ? PHASES_DRY : PHASES);
 
 // ================= Utilidades =================
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -187,15 +215,8 @@ function makeRidge(base, amp, seed) {
   }
   return a;
 }
-const RIDGE_FAR = makeRidge(16, 10, 1.3);
-const RIDGE_NEAR = makeRidge(8, 7, 4.1);
 const STARS = Array.from({ length: 40 }, () => [(Math.random() * W) | 0, (Math.random() * (HORIZON - 20)) | 0]);
-// Flocos com profundidade z (0.25 = longe/pequeno, 1 = perto/grande)
-const FLAKES = Array.from({ length: 150 }, () => {
-  const x = rand(0, W), y = rand(0, VIEW_H);
-  return { x, y, px: x, py: y, z: rand(0.25, 1) };
-});
-const SPRAY = [];                   // neve levantada pelos pneus
+const SPRAY = [];                   // água e lama levantadas pelos pneus
 
 // ================= Pinturas =================
 const PAINTS = [
@@ -240,11 +261,15 @@ const G = {
   curve: 0, curveTarget: 0, segLeft: 800, bgX: 0,
   t: 0, dayEnd: DAY_LEN, day: 1, carsLeft: 0, goalMet: false, passed: 0, runT: 0,
   cars: [], spawnT: 0, banner: null, env: getEnv(0),
+  animals: [], animalT: 2000, animalWarn: false, mud: 0, jolt: 0,
   // paisagem: índice atual, fronteiras no mundo (objetos) e transição do horizonte
-  themeIdx: 0, themeBounds: [{ z: -Infinity, idx: 0 }], horizonPrev: null, horizonT: 1,
+  themeIdx: 0, themeBounds: [], horizonPrev: null, horizonT: 1,
   flash: 0, boltT: 6, bolt: null,
   goalIdx: loadGoalIdx(), records: loadRecords(), newRecord: false,
 };
+// O menu também mostra uma paisagem sorteada
+G.themeIdx = nextTheme();
+G.themeBounds = [{ z: -Infinity, idx: G.themeIdx }];
 
 function loadGoalIdx() {
   let v = DEFAULT_GOAL;
@@ -279,15 +304,17 @@ function showBanner(str, secs = 2.5) { G.banner = { text: str, t: secs, dur: sec
 function startRun() {
   G.car = { ...CARS[G.sel], color: paintOf(G.sel).hex };
   G.hw = (getSprite(G.car.id, G.car.color).width / 2) * PLAYER_SCALE / HALF_P;
+  themeBag = [];
+  const first = nextTheme();
   Object.assign(G, {
     state: 'playing', pos: 0, speed: 0, x: 0, vx: 0, crashT: 0,
     curve: 0, curveTarget: 0, segLeft: 900, bgX: 0,
     t: 0, dayEnd: DAY_LEN, day: 1, carsLeft: dayGoal(1), goalMet: false, passed: 0, runT: 0,
-    cars: [], spawnT: 1, newRecord: false,
-    themeIdx: 0, themeBounds: [{ z: -Infinity, idx: 0 }], horizonPrev: null, horizonT: 1, flash: 0, boltT: 6,
+    cars: [], spawnT: 1, newRecord: false, animals: [], animalT: 2000, animalWarn: false, mud: 0, jolt: 0,
+    themeIdx: first, themeBounds: [{ z: -Infinity, idx: first }], horizonPrev: null, horizonT: 1, flash: 0, boltT: 6,
   });
   SPRAY.length = 0;
-  showBanner(`DIA 1 - ${THEMES[0].name}`, 2.5);
+  showBanner(`DIA 1 - ${THEMES[first].name}`, 2.5);
   Sound.beep(880, 0.15);
 }
 
@@ -309,35 +336,43 @@ function endOfDay() {
   G.carsLeft = dayGoal(G.day);
   G.goalMet = false;
   // Nova paisagem: os objetos mudam a partir de um ponto lá na frente; o horizonte faz uma transição
-  const idx = themeOfDay(G.day);
+  const idx = nextTheme(G.themeIdx);
   G.themeBounds = [G.themeBounds[G.themeBounds.length - 1], { z: G.pos + SPAWN_DIST + 200, idx }];
   G.horizonPrev = G.themeIdx;
   G.themeIdx = idx;
   G.horizonT = 0;
+  G.animalWarn = false;
   showBanner(`DIA ${G.day} - ${THEMES[idx].name}`, 3);
   Sound.jingle();
 }
 
 // ================= Entrada =================
 const keys = {};
-const touch = { left: false, right: false, gas: false, brake: false };
+const touch = { left: false, right: false, brake: false };
+// Modo celular: botões na tela e aceleração automática (só freia quem aperta FREAR).
+// Começa ligado em telas de toque; o primeiro toque liga, o primeiro uso do teclado desliga.
+let touchMode = !!(window.matchMedia && matchMedia('(pointer: coarse)').matches);
 const input = {
   get left() { return keys.ArrowLeft || keys.KeyA || touch.left || Pad.act.left; },
   get right() { return keys.ArrowRight || keys.KeyD || touch.right || Pad.act.right; },
-  get gas() { return keys.ArrowUp || keys.KeyW || keys.Space || keys.KeyZ || touch.gas || Pad.act.accel || Pad.act.up; },
+  get gas() { return keys.ArrowUp || keys.KeyW || keys.Space || keys.KeyZ || touchMode || Pad.act.accel || Pad.act.up; },
   get brake() { return keys.ArrowDown || keys.KeyS || keys.KeyX || touch.brake || Pad.act.brake || Pad.act.down; },
 };
 
 addEventListener('keydown', e => {
+  touchMode = false;
   if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Space'].includes(e.code)) e.preventDefault();
   if (!keys[e.code]) onKeyPress(e.code);
   keys[e.code] = true;
 });
 addEventListener('keyup', e => { keys[e.code] = false; });
-addEventListener('blur', () => {
+function pauseIfPlaying() {
   for (const k in keys) keys[k] = false;
+  touch.left = touch.right = touch.brake = false;
   if (G.state === 'playing') G.state = 'paused';
-});
+}
+addEventListener('blur', pauseIfPlaying);
+document.addEventListener('visibilitychange', () => { if (document.hidden) pauseIfPlaying(); });
 
 function onKeyPress(code) {
   Sound.init();
@@ -421,26 +456,52 @@ function onTap(fx, fy) {
     const slot = clamp(Math.floor((x - BOX.x0) / BOX.step), 0, CARS.length - 1);
     if (slot === G.sel) startRun();
     else { G.sel = slot; Sound.beep(440); }
-  } else if (G.state === 'paused') G.state = 'playing';
+  } else if (G.state === 'paused') G.state = fy > 0.75 ? 'menu' : 'playing';   // toque embaixo: menu
   else if (G.state === 'gameover') G.state = 'menu';
 }
-function readTouches(e) {
-  touch.left = touch.right = touch.gas = touch.brake = false;
-  for (const t of e.touches) {
-    const fx = canvasFx(t.clientX);
-    if (fx < 0.33) { touch.left = true; touch.gas = true; }
-    else if (fx > 0.67) { touch.right = true; touch.gas = true; }
-    else touch.brake = true;
-  }
+
+// Botões de toque (HTML em index.html). A área de acerto é o retângulo do botão com uma folga,
+// e os toques são relidos a cada movimento: dá para deslizar o dedo de ◀ para ▶ sem levantar.
+const ui = {
+  root: document.getElementById('touchui'),
+  l: document.getElementById('tl'), r: document.getElementById('tr'),
+  b: document.getElementById('tb'), p: document.getElementById('tp'),
+};
+function hitBtn(el, t, pad) {
+  const r = el.getBoundingClientRect();
+  if (!r.width) return false;   // botão oculto
+  return t.clientX >= r.left - pad && t.clientX <= r.right + pad && t.clientY >= r.top - pad && t.clientY <= r.bottom + pad;
 }
-canvas.addEventListener('touchstart', e => {
+function readTouches(e) {
+  touch.left = touch.right = touch.brake = false;
+  for (const t of e.touches) {
+    if (hitBtn(ui.l, t, 22)) touch.left = true;
+    else if (hitBtn(ui.r, t, 22)) touch.right = true;
+    if (hitBtn(ui.b, t, 22)) touch.brake = true;
+  }
+  ui.l.classList.toggle('down', touch.left);
+  ui.r.classList.toggle('down', touch.right);
+  ui.b.classList.toggle('down', touch.brake);
+}
+document.addEventListener('touchstart', e => {
   e.preventDefault();
+  touchMode = true;
+  Sound.init();
+  if (G.state === 'playing') {
+    if ([...e.changedTouches].some(t => hitBtn(ui.p, t, 10))) G.state = 'paused';
+    readTouches(e);
+    return;
+  }
   const t = e.changedTouches[0];
-  if (G.state !== 'playing') onTap(canvasFx(t.clientX), canvasFy(t.clientY));
-  else readTouches(e);
+  const fx = canvasFx(t.clientX), fy = canvasFy(t.clientY);
+  // O menu só reage a toques dentro do jogo; pausa e fim de jogo, em qualquer lugar da tela
+  if (G.state === 'menu' && (fx < 0 || fx > 1 || fy < 0 || fy > 1)) return;
+  onTap(fx, fy);
 }, { passive: false });
-canvas.addEventListener('touchmove', e => { e.preventDefault(); if (G.state === 'playing') readTouches(e); }, { passive: false });
-canvas.addEventListener('touchend', e => { e.preventDefault(); readTouches(e); }, { passive: false });
+document.addEventListener('touchmove', e => { e.preventDefault(); if (G.state === 'playing') readTouches(e); }, { passive: false });
+const touchEnd = e => { e.preventDefault(); Sound.init(); readTouches(e); };
+document.addEventListener('touchend', touchEnd, { passive: false });
+document.addEventListener('touchcancel', touchEnd, { passive: false });
 canvas.addEventListener('mousedown', e => { if (G.state !== 'playing') onTap(canvasFx(e.clientX), canvasFy(e.clientY)); });
 
 // ================= Simulação =================
@@ -481,13 +542,12 @@ function update(dt) {
   G.env = getEnv(G.t, phasesOf(G.themeIdx));
   G.horizonT = Math.min(1, G.horizonT + dt / 4);
   if (G.state !== 'paused') {
-    updateFlakes(dt);
     updateRain(dt);
     updateSpray(dt);
   }
   if (G.state === 'playing' && G.env.name !== G.lastPhase) {
-    if (G.env.name === 'NEVE') showBanner('NEVE! PISTA ESCORREGADIA', 2.5);
     if (G.env.name === 'CHUVA') showBanner('CHUVA! PISTA MOLHADA', 2.5);
+    if (G.env.name === 'SOL A PINO') showBanner('SOL A PINO! CALOR DE RACHAR', 2.5);
     G.lastPhase = G.env.name;
   }
   const top = G.car ? G.car.topKmh * KMH : 1;
@@ -509,7 +569,7 @@ function updatePlaying(dt) {
   } else if (input.brake) {
     G.speed -= 520 * dt;
   } else if (input.gas) {
-    const a = 190 * car.accel * (1 - 0.55 * G.speed / top) * (env.snow > 0.5 ? 0.8 : 1);
+    const a = 190 * car.accel * (1 - 0.55 * G.speed / top) * (1 - 0.18 * G.mud);
     G.speed += a * dt;
   } else {
     G.speed -= 70 * dt;
@@ -520,9 +580,9 @@ function updatePlaying(dt) {
   }
   G.speed = clamp(G.speed, 0, top);
 
-  // Direção: a neve reduz a aderência (a Kombi, mais pesada, sofre menos)
+  // Direção: a lama e a chuva reduzem a aderência (a Kombi, mais pesada, sofre menos)
   const sr = G.speed / (130 * KMH);
-  const grip = 1 - env.snow * clamp(0.75 - 0.35 * (car.mass - 1), 0.3, 0.85)
+  const grip = 1 - G.mud * clamp(0.32 - 0.15 * (car.mass - 1), 0.12, 0.42)
                 - env.rain * clamp(0.35 - 0.15 * (car.mass - 1), 0.15, 0.45);
   const steerPow = 1.7 * car.handling * (0.35 + 0.65 * Math.min(1, G.speed / 250));
   const targetVx = G.crashT > 0 ? 0 : steer * steerPow;
@@ -532,7 +592,12 @@ function updatePlaying(dt) {
   G.x -= (G.curve * sr * sr * 0.6 / Math.sqrt(car.mass)) * dt;   // força centrífuga
   G.x = clamp(G.x, -1.5, 1.5);
 
+  // Lama: o quanto a pista sob o carro é de terra; buracos no caminho
+  const z0 = G.pos + D_PLAYER;
+  G.mud += ((THEMES[themeAtZ(z0)].mud ? 1 : 0) - G.mud) * Math.min(1, dt * 2);
+  G.jolt = Math.max(0, G.jolt - dt);
   updateTrack(G.speed * dt);
+  updateHoles(z0, G.pos + D_PLAYER);
 
   // Relógio do dia
   G.t += dt;
@@ -542,6 +607,7 @@ function updatePlaying(dt) {
   }
 
   updateOpponents(dt);
+  updateAnimals(dt);
 
   if (G.banner && (G.banner.t -= dt) <= 0) G.banner = null;
 }
@@ -608,6 +674,7 @@ function updateOpponents(dt) {
       c.lane = farthestLane(G.x);
       c.tx = LANES[c.lane];
     }
+    if (G.animals.length) avoidAnimals(c);
     c.x += clamp(c.tx - c.x, -0.8 * dt, 0.8 * dt);
     c.z += c.speed * dt;
   }
@@ -667,27 +734,81 @@ function crash(c, rel) {
   Pad.rumble(220, 0.8);
 }
 
-function updateFlakes(dt) {
-  if (G.env.snow <= 0.01) return;
-  // Os flocos se afastam do ponto de fuga conforme a velocidade: parecem vir na direção da câmera
-  const vx0 = W / 2 + curveOff(0), vy0 = HORIZON - 10;
-  const rush = G.speed * 0.0022;
-  const wind = 18 * Math.sin(G.clock * 0.35) + 10 * Math.sin(G.clock * 1.3) - G.curve * G.speed * 0.04;
-  for (const f of FLAKES) {
-    const k = rush * f.z;
-    f.px = f.x; f.py = f.y;
-    f.x += ((f.x - vx0) * k + wind * f.z + Math.sin(G.clock * 2 + f.z * 40) * 6) * dt;
-    f.y += ((f.y - vy0) * k + 12 + 40 * f.z) * dt;
-    if (f.y > VIEW_H + 4 || f.x < -4 || f.x > W + 4) {
-      if (G.speed > 250 && Math.random() < 0.7) { f.x = vx0 + rand(-90, 90); f.y = rand(0, HORIZON + 40); }
-      else { f.x = rand(0, W); f.y = -2; }
-      f.z = rand(0.25, 1);
-      f.px = f.x; f.py = f.y;
+// ---- Animais na pista (sertão): vacas e cavalos atravessam ou ficam parados numa faixa ----
+const ANIMAL_KINDS = [['vaca', 0.55], ['cavalo', 0.45]];
+const ANIMAL_COATS = ['A', 'B', 'C'];
+
+function trySpawnAnimal() {
+  const z = G.pos + SPAWN_DIST;
+  if (!THEMES[themeAtZ(z)].animals) return;
+  const kind = Math.random() < ANIMAL_KINDS[0][1] ? 'vaca' : 'cavalo';
+  const coat = kind + pick(ANIMAL_COATS);
+  const spr = getProp(coat + '0');
+  const a = { z, kind, coat, x: 0, vx: 0, flip: Math.random() < 0.5, ph: Math.random() * 6, frame: 0, hit: false, cued: false,
+              hw: (spr.width / 2) * spr.size * PLAYER_SCALE / HALF_P };
+  if (Math.random() < 0.55) {
+    // Atravessa a pista devagar, vindo de um dos lados
+    const side = Math.random() < 0.5 ? -1 : 1;
+    a.x = side * 1.25;
+    a.vx = -side * rand(0.28, 0.5);
+    a.flip = a.vx < 0;
+  } else {
+    a.x = LANES[(Math.random() * LANES.length) | 0];     // parado no meio de uma faixa
+  }
+  G.animals.push(a);
+  if (!G.animalWarn) { G.animalWarn = true; showBanner('CUIDADO: GADO NA PISTA!', 2.5); }
+}
+
+function updateAnimals(dt) {
+  // Surgem por distância percorrida (como o tráfego): parado no acostamento ninguém aparece
+  G.animalT -= G.speed * dt;
+  if (G.animalT <= 0 && !G.banner) {
+    G.animalT = rand(1800, 3400);
+    trySpawnAnimal();
+  }
+  const playerZ = G.pos + D_PLAYER;
+  for (const a of G.animals) {
+    a.x += a.vx * dt;
+    a.frame = Math.abs(a.vx) > 0.01 ? (Math.floor(G.clock * (a.hit ? 9 : 4) + a.ph) & 1) : 0;
+    const d = a.z - G.pos, rel = a.z - playerZ;
+    if (!a.cued && !a.hit && d < 700) {
+      a.cued = true;
+      if (Math.random() < 0.7) Sound.animal(a.kind, 0.035);
+    }
+    if (G.crashT <= 0 && !a.hit && Math.abs(rel) < CAR_LEN && Math.abs(a.x - G.x) < (a.hw + G.hw) * 0.85) crashAnimal(a);
+  }
+  G.animals = G.animals.filter(a => {
+    const d = a.z - G.pos;
+    return d < 2100 && d > D_PLAYER - 200 && !(a.vx * a.x > 0 && Math.abs(a.x) > 1.7);
+  });
+}
+
+function crashAnimal(a) {
+  const car = G.car;
+  G.speed *= car.retain * 0.8;
+  G.crashT = 0.9 / Math.sqrt(car.mass);
+  const dir = Math.sign(G.x - a.x) || (Math.random() < 0.5 ? -1 : 1);
+  G.vx = (dir * 1.6) / car.mass;
+  a.hit = true;                       // assustado, sai correndo para o lado oposto
+  a.vx = -dir * 1.4;
+  a.flip = a.vx < 0;
+  Sound.crash();
+  Sound.animal(a.kind, 0.1);
+  Pad.rumble(300, 1);
+}
+
+// Carros do tráfego desviam de um animal parado ou atravessando à frente
+function avoidAnimals(c) {
+  for (const a of G.animals) {
+    const dz = a.z - c.z;
+    if (dz > 0 && dz < 700 && Math.abs(a.x - c.tx) < 0.5) {
+      c.lane = farthestLane(a.x);
+      c.tx = LANES[c.lane];
     }
   }
 }
 
-// Chuva: gotas rápidas e inclinadas que, como os flocos, "vêm" na direção da câmera com a velocidade
+// Chuva: gotas rápidas e inclinadas que "vêm" na direção da câmera com a velocidade
 const DROPS = Array.from({ length: 140 }, () => {
   const x = rand(0, W), y = rand(0, VIEW_H);
   return { x, y, px: x, py: y - 6, z: rand(0.3, 1) };
@@ -716,9 +837,22 @@ function updateRain(dt) {
   }
 }
 
+// Buraco: perde velocidade (a Kombi, firme, perde menos), o carro pula para o lado e sacode
+function updateHoles(z0, z1) {
+  for (const h of holesBetween(z0, z1)) {
+    if (Math.abs(h.x - G.x) >= h.r + G.hw * 0.55) continue;
+    const car = G.car, sev = clamp((h.r - 0.09) / 0.15, 0.25, 1);
+    G.speed *= 1 - (0.14 + 0.24 * sev) * (1.2 - 0.6 * car.retain);
+    G.vx += (Math.random() < 0.5 ? -1 : 1) * (0.5 + 0.6 * sev) / car.mass;
+    G.jolt = 0.3 + 0.2 * sev;
+    Sound.thud();
+    Pad.rumble(150, 0.5 + 0.4 * sev);
+  }
+}
+
 function updateSpray(dt) {
   const env = G.env;
-  const wet = Math.max(env.snow, env.rain);
+  const wet = Math.max(env.rain, G.mud * 0.7);
   if (G.state === 'playing' && wet > 0.3 && G.speed > 80) {
     const px = W / 2 + curveOff(P_PLAYER) + G.x * HALF_P;
     const halfW = getSprite(G.car.id, G.car.color).width;      // meia-largura na tela (escala 2)
@@ -730,7 +864,7 @@ function updateSpray(dt) {
       SPRAY.push({
         x: px + side * (halfW - 5) + rand(-2, 2), y: PLAYER_Y - 2,
         vx: side * rand(10, 40) - G.vx * 30, vy: -rand(20, 70),
-        t: 0, life: rand(0.35, 0.7), big: Math.random() < 0.3, water: env.rain > env.snow,
+        t: 0, life: rand(0.35, 0.7), big: Math.random() < 0.3, mud: G.mud > 0.5,
       });
     }
   }
@@ -911,23 +1045,34 @@ function drawRidge(ridge, off, color) {
   ctx.fill();
 }
 
-// Cor do chão tingida pela paisagem (areia no litoral, concreto na cidade...); some à noite e na neve
+// Cor do chão tingida pela paisagem (areia no litoral, concreto na cidade...); some à noite
 function tintGround(c, env, idx) {
   const t = THEMES[idx].tint;
-  return t ? lerpRgb(c, t[0], t[1] * (1 - env.night) * (1 - env.snow)) : c;
+  return t ? lerpRgb(c, t[0], t[1] * (1 - env.night)) : c;
 }
 
 const LANE_LINES = [-0.31, 0.31];     // divisórias entre as três faixas
 
+// Estrada de terra da Transamazônica: lama no lugar do asfalto, sem faixas pintadas
+const MUD_IDX = THEMES.findIndex(t => t.mud);
+const MUD_ROAD = [150, 86, 52];
+const MUD_EDGE = [[128, 72, 44], [110, 62, 38]];
+
 function drawRoad(env) {
   const rgb = env.rgb;
-  // Na troca de paisagem, o tom do chão acompanha a transição do horizonte
+  // Na troca de paisagem, o tom do chão e da pista acompanha a transição do horizonte
   const prev = G.horizonPrev !== null && G.horizonT < 1 ? G.horizonPrev : G.themeIdx;
   const ground = ['g1', 'g2'].map(k =>
     lerpRgb(tintGround(rgb[k], env, prev), tintGround(rgb[k], env, G.themeIdx), G.horizonT));
   const groundCss = ground.map(rgbStr);
-  const lane = lerpRgb(rgb.road, [236, 236, 228], 0.75 * (1 - env.snow * 0.85));
+  const lane = lerpRgb(rgb.road, [236, 236, 228], 0.75);
   const laneCss = rgbStr(lane);
+  const mud = MUD_IDX >= 0 ? themeWeight(MUD_IDX) : 0;
+  const dark = 1 - env.night * 0.8 - env.rain * 0.25;
+  const roadRgb = mud > 0.01 ? lerpRgb(rgb.road, mulRgb(MUD_ROAD, dark), mud) : rgb.road;
+  const edgeDark = 1 - env.night * 0.5 - env.rain * 0.25;      // à noite a borda continua aparecendo, para dar para ler as curvas
+  const edgeRgb = [rgb.e1, rgb.e2].map((c, i) => (mud > 0.01 ? lerpRgb(c, mulRgb(MUD_EDGE[i], edgeDark), mud) : c));
+  const roadCss = rgbStr(roadRgb), edgeCss = edgeRgb.map(rgbStr);
 
   for (let y = HORIZON; y < VIEW_H; y++) {
     const p = (y - HORIZON + 0.5) / ROAD_ROWS;
@@ -937,26 +1082,97 @@ function drawRoad(env) {
     const s = Math.floor((G.pos + dist) / STRIPE) & 1;
     const f = fogAt(dist, env);
     const fogged = f > 0.004;
-    const col = fogged ? (key => fogMix(rgb[key], f)) : (key => env[key]);
     ctx.fillStyle = fogged ? fogMix(ground[s ? 0 : 1], f) : groundCss[s ? 0 : 1];
     ctx.fillRect(0, y, W, 1);
     const l = Math.round(cx - half), r = Math.round(cx + half);
-    ctx.fillStyle = col('road');
+    ctx.fillStyle = fogged ? fogMix(roadRgb, f) : roadCss;
     ctx.fillRect(l, y, r - l, 1);
     const ew = Math.max(1, Math.round(half * 0.07));
-    ctx.fillStyle = col(s ? 'e1' : 'e2');
+    ctx.fillStyle = fogged ? fogMix(edgeRgb[s ? 0 : 1], f) : edgeCss[s ? 0 : 1];
     ctx.fillRect(l - ew, y, ew, 1);
     ctx.fillRect(r, y, ew, 1);
 
-    // Faixas pontilhadas entre as pistas
-    if (Math.floor((G.pos + dist) / 18) % 3 === 0) {
+    // Faixas pontilhadas entre as pistas (somem na estrada de terra)
+    if (mud < 0.98 && Math.floor((G.pos + dist) / 18) % 3 === 0) {
       const lw = Math.max(1, Math.round(half * 0.02));
+      ctx.globalAlpha = 1 - mud;
       ctx.fillStyle = fogged ? fogMix(lane, f) : laneCss;
       for (const b of LANE_LINES) ctx.fillRect(Math.round(cx + b * half - lw / 2), y, lw, 1);
+      ctx.globalAlpha = 1;
     }
 
-    if (env.snow > 0.01) drawSnowyRow(env, y, dist, half, cx, f);
+    if (mud > 0.02) drawMudRow(env, y, dist, half, cx, f, mud, roadRgb);
   }
+}
+
+// Lama: ruas de pneu escuras em cada faixa e poças que refletem o céu
+function drawMudRow(env, y, dist, half, cx, f, mud, road) {
+  const z = G.pos + dist, k = Math.floor(z / 40);
+  ctx.globalAlpha = mud;
+  // As poças ocupam só o começo de cada trecho de 40 (senão virariam um retângulo enorme perto da câmera)
+  // e têm perfil de elipse: mais estreitas nas pontas
+  const zt = (z - k * 40) / 4.5 - 1;
+  if (zt < 1 && hash(k + 3) > 0.5) {
+    const x0 = hash(k + 7) * 1.5 - 0.8, w = 0.22 + hash(k + 9) * 0.4, sh = Math.sqrt(1 - zt * zt);
+    const dark = 1 - env.night * 0.9 - env.rain * 0.25;
+    const water = lerpRgb(lerpRgb(road, mulRgb([172, 128, 92], dark), 0.45), env.rgb.skyB, 0.1 + 0.25 * env.rain);
+    ctx.fillStyle = fogMix(water, f);
+    const pw = Math.max(1, Math.round(w * half * sh));
+    ctx.fillRect(Math.round(cx + (x0 + w / 2) * half - pw / 2), y, pw, 1);
+  }
+  const tw = Math.max(1, Math.round(half * 0.05));
+  ctx.fillStyle = fogMix(mulRgb(road, 0.68), f);
+  for (const L of LANES) {
+    for (const o of [-0.14, 0.14]) {
+      const wob = 0.03 * Math.sin(z * 0.01 + L * 5);
+      ctx.fillRect(Math.round(cx + (L + o + wob) * half - tw / 2), y, tw, 1);
+    }
+  }
+  ctx.globalAlpha = 1;
+}
+
+// Buracos: presos ao mundo (sorteio determinístico por trecho, como os objetos da beira da estrada)
+const HOLE_GAP = 260;
+function holesBetween(z0, z1) {
+  const list = [];
+  for (let k = Math.floor(z0 / HOLE_GAP); k <= Math.floor(z1 / HOLE_GAP); k++) {
+    for (let j = 0; j < 2; j++) {
+      if (hash(k * 13.7 + j * 71.3 + 5) >= (j ? 0.1 : 0.4)) continue;
+      const z = (k + 0.1 + 0.8 * hash(k * 7.7 + j * 1.3)) * HOLE_GAP;
+      if (z < z0 || z >= z1 || !THEMES[themeAtZ(z)].holes) continue;
+      list.push({ z, x: (hash(k * 3.1 + j * 9.7 + 1) * 2 - 1) * 0.92, r: 0.11 + 0.13 * hash(k * 5.3 + j * 2.2 + 2) });
+    }
+  }
+  return list;
+}
+
+// Chão liso: os buracos são desenhados logo depois da pista, por baixo de carros e animais
+function drawHoles(env) {
+  for (const h of holesBetween(G.pos + 2, G.pos + PROP_FAR)) {
+    const d = h.z - G.pos, p = CAM_D / d, y = HORIZON + p * ROAD_ROWS;
+    const cx = W / 2 + curveOff(p) + h.x * ROAD_HALF * p, rw = h.r * ROAD_HALF * p, rh = Math.max(0.7, rw * 0.3);
+    if (rw < 0.8 || y - rh > VIEW_H) continue;
+    const f = fogAt(d, env), n = 1 - env.night * 0.85;
+    const cy = y - rh * 0.6;
+    ctx.fillStyle = fogMix(mulRgb([132, 78, 48], n), f);                      // borda de terra revirada
+    ctx.beginPath(); ctx.ellipse(cx, cy, rw * 1.2, rh * 1.3, 0, 0, Math.PI * 2); ctx.fill();
+    const water = lerpRgb([34, 20, 14], env.rgb.skyB, 0.5 * env.rain);       // fundo escuro, com água na chuva
+    ctx.fillStyle = fogMix(mulRgb(water, n), f);
+    ctx.beginPath(); ctx.ellipse(cx, cy + rh * 0.1, rw * 0.9, rh * 0.85, 0, 0, Math.PI * 2); ctx.fill();
+  }
+}
+
+// Miragem: faixas de céu tremendo sobre o asfalto lá longe, nas fases de calor
+function drawMirage(env) {
+  ctx.fillStyle = env.skyB;
+  for (let i = 0; i < 5; i++) {
+    const y = HORIZON + 2 + i * 3, p = (y - HORIZON + 0.5) / ROAD_ROWS;
+    const half = ROAD_HALF * p, cx = W / 2 + curveOff(p);
+    const wave = Math.sin(G.clock * 2.2 + i * 1.7);
+    ctx.globalAlpha = env.heat * 0.28 * (0.55 + 0.45 * wave);
+    ctx.fillRect(Math.round(cx - half * (0.7 + 0.2 * Math.sin(G.clock * 0.9 + i * 2.3)) + wave * 2), y, Math.round(half * 1.3), 1);
+  }
+  ctx.globalAlpha = 1;
 }
 
 // ---- Horizontes por paisagem ----
@@ -981,6 +1197,21 @@ for (let i = 0; i < 160; i++) {
   const x = (Math.random() * RIDGE_N) | 0, h = CITY_FAR[x];
   if (h > 6 && CITY_NEAR[x] < h - 3) CITY_LIGHTS.push([x, CITY_NEAR[x] + 2 + ((Math.random() * (h - CITY_NEAR[x] - 3)) | 0), Math.random() * 6]);
 }
+// Selva: copas de árvores em duas camadas (ondulação lenta + o "abaulado" de cada copa)
+function makeCanopy(base, amp, wl, seed) {
+  const a = [];
+  for (let i = 0; i < RIDGE_N; i++) {
+    const swell = 0.5 + 0.5 * Math.sin((i / RIDGE_N) * Math.PI * 2 * 4 + seed);
+    const crown = Math.abs(Math.sin((i / wl) * Math.PI + seed));
+    a.push(Math.max(2, Math.round(base + amp * (0.55 * swell + 0.35 * crown) + hash(i * 1.7 + seed * 5) * 2)));
+  }
+  return a;
+}
+const JUNGLE_FAR = makeCanopy(9, 9, 16, 1.4);
+const JUNGLE_NEAR = makeCanopy(5, 6, 8, 3.1);
+// Caatinga: serrotes e chapadas de topo achatado (alturas em degraus)
+const CAAT_FAR = makeRidge(11, 5, 3.1).map(h => Math.round(h / 3) * 3);
+const CAAT_NEAR = makeRidge(4, 3, 6.2).map(h => Math.round(h / 2) * 2);
 const SEA_GLINTS = Array.from({ length: 30 }, () => [(Math.random() * W) | 0, (Math.random() * 5) | 0, Math.random() * 6]);
 
 // Rio: Corcovado (com o Cristo), Morro da Urca e Pão de Açúcar ao fundo; morros com casinhas na frente
@@ -1058,7 +1289,7 @@ function themeWeight(idx) {
 }
 function drawKites(env) {
   const idx = THEMES.findIndex(t => t.kites);
-  const a = themeWeight(idx) * (1 - env.rain) * (1 - env.night) * (1 - env.fog) * (1 - env.snow);
+  const a = themeWeight(idx) * (1 - env.rain) * (1 - env.night) * (1 - env.fog);
   if (a <= 0.02) return;
   for (const k of KITES) {
     const x = Math.round(mod(k.x - G.bgX * 0.3 + Math.sin(G.clock * 0.7 + k.ph) * 6, W + 40) - 20);
@@ -1086,10 +1317,7 @@ function drawKites(env) {
 function drawHorizon(env, haze, idx) {
   const c2 = fogMix(env.rgb.m2, haze * 0.96), c1 = fogMix(env.rgb.m1, haze * 0.9);
   const kind = THEMES[idx].horizon;
-  if (kind === 'mountains') {
-    drawRidge(RIDGE_FAR, G.bgX * 0.5, c2);
-    drawRidge(RIDGE_NEAR, G.bgX, c1);
-  } else if (kind === 'hills') {
+  if (kind === 'hills') {
     drawRidge(HILLS_FAR, G.bgX * 0.5, c2);
     drawRidge(HILLS_NEAR, G.bgX, c1);
   } else if (kind === 'city') {
@@ -1108,6 +1336,18 @@ function drawHorizon(env, haze, idx) {
     drawRidge(CITY_NEAR, G.bgX, c1);
   } else if (kind === 'rio') {
     drawRio(env, haze, c2, c1);
+  } else if (kind === 'jungle') {
+    const day = 1 - env.night;
+    drawRidge(JUNGLE_FAR, G.bgX * 0.5, fogMix(lerpRgb(env.rgb.m2, [70, 124, 84], 0.6 * day), haze * 0.96));
+    drawRidge(JUNGLE_NEAR, G.bgX, fogMix(lerpRgb(env.rgb.m1, [34, 84, 46], 0.75 * day), haze * 0.9));
+    ctx.globalAlpha = 0.22 * day;                       // umidade da floresta: bruma rente ao horizonte
+    ctx.fillStyle = env.skyB;
+    ctx.fillRect(0, HORIZON - 4, W, 4);
+    ctx.globalAlpha = 1;
+  } else if (kind === 'caatinga') {
+    const warm = 0.6 * (1 - env.night);            // serras marrom-alaranjadas, escuras à noite
+    drawRidge(CAAT_FAR, G.bgX * 0.5, fogMix(lerpRgb(env.rgb.m2, [188, 128, 88], warm), haze * 0.96));
+    drawRidge(CAAT_NEAR, G.bgX, fogMix(lerpRgb(env.rgb.m1, [150, 98, 64], warm), haze * 0.9));
   } else if (kind === 'sea') {
     drawRidge(SEA_HILLS, G.bgX * 0.5, c2);
     // Mar no horizonte, refletindo o céu, com brilhos
@@ -1168,16 +1408,14 @@ function drawProp(o, env) {
   const ax = W / 2 + curveOff(p) + o.x * ROAD_HALF * p;
   const sx = Math.round(ax - base.anchor * scale), sy = Math.round(y - rh);
   if (sx > W || sx + rw < 0 || sy > VIEW_H) return;
-  const n = env.night, f = fogAt(o.d, env);
+  // Animais de noite só aparecem no facho do farol (os olhos brilham no escuro)
+  const n = o.animal ? env.night * (1 - beamLight(o.d, o.x) * 0.95) : env.night, f = fogAt(o.d, env);
+  if (o.animal) drawCarShadow(ax, y, rw, scale, env);
 
   if (n < 0.99) ctx.drawImage(base, sx, sy, rw, rh);
   if (n > 0.01) {
     ctx.globalAlpha = n;
     ctx.drawImage(getProp(o.prop, 'night', o.flip), sx, sy, rw, rh);
-  }
-  if (env.snow > 0.01) {
-    ctx.globalAlpha = env.snow;
-    ctx.drawImage(getProp(o.prop, 'snowcap', o.flip), sx, sy, rw, rh);
   }
   if (f > 0.01) {
     ctx.globalAlpha = f;
@@ -1199,25 +1437,6 @@ function drawProp(o, env) {
   }
 }
 
-// Pista nevada: manchas de neve acumulada e trilhas escuras de pneu em cada faixa
-function drawSnowyRow(env, y, dist, half, cx, f) {
-  const z = G.pos + dist, sn = env.snow;
-  const k = Math.floor(z / 40);
-  if (hash(k) > 0.5) {
-    const x0 = hash(k + 7) * 1.8 - 0.9, w = 0.2 + hash(k + 9) * 0.5;
-    ctx.fillStyle = fogMix(lerpRgb(env.rgb.road, SNOW_RGB, sn * 0.85), f);
-    ctx.fillRect(Math.round(cx + x0 * half), y, Math.max(1, Math.round(w * half)), 1);
-  }
-  const tw = Math.max(1, Math.round(half * 0.05));
-  ctx.fillStyle = fogMix(lerpRgb(env.rgb.road, mulRgb(env.rgb.road, 0.6), sn), f);
-  for (let i = 0; i < LANES.length; i++) {
-    const wob = 0.03 * Math.sin(z * 0.01 + i * 2);
-    for (const o of [-0.14, 0.14]) {
-      ctx.fillRect(Math.round(cx + (LANES[i] + o + wob) * half - tw / 2), y, tw, 1);
-    }
-  }
-}
-
 // ---- Neblina ----
 const FOG_RGB = [165, 168, 173];
 const FOG_HEX = '#a5a8ad';
@@ -1227,9 +1446,6 @@ let fogVis = 230;                   // distância de visibilidade; recalculada a
 
 // Bancos de neblina: a densidade oscila ao longo da estrada
 const updateFogVis = () => { fogVis = 215 + 85 * Math.sin(G.pos * 0.00045) + 25 * Math.sin(G.pos * 0.0013); };
-// Na neve há uma névoa branca mais leve; o mesmo sistema cuida das duas
-const SNOW_RGB = [232, 237, 245];
-const SNOW_HEX = '#e8edf5';
 let hazeRGB = FOG_RGB, hazeHex = FOG_HEX;
 // Neblina rosada baixa do amanhecer
 const MIST_RGB = [238, 204, 214];
@@ -1237,7 +1453,7 @@ const MIST_HEX = '#eeccd6';
 // Chuva: névoa cinza-azulada leve
 const RAIN_RGB = [118, 126, 138];
 const RAIN_HEX = '#767e8a';
-const hazeAmt = env => Math.max(env.fog, env.snow * 0.5, env.mist, env.rain * 0.3);
+const hazeAmt = env => Math.max(env.fog, env.mist, env.rain * 0.3);
 const fogAt = (d, env) => {
   const h = hazeAmt(env);
   return h <= 0.001 ? 0 : h * (1 - Math.exp(-Math.max(0, d - 85) / fogVis));
@@ -1353,7 +1569,6 @@ function drawOpponent(c, d, env) {
   drawCarShadow(x, y, dw, scale, env);
   if (n <= 0.01) {
     ctx.drawImage(base, sx, sy, rw, rh);
-    drawSnowCap(c.model, c.color, sx, sy, rw, rh, env);
     drawBacklight(c.model, c.color, sx, sy, rw, rh, env);
     if (f > 0.01 || env.fog > 0.01 || env.lamps > 0.02) drawCarLights(c, base, sx, sy, rw, rh, scale, 0, f, env);
     return;
@@ -1396,7 +1611,7 @@ function drawPlayer(env) {
   const spr = getSprite(G.car.id, G.car.color);
   const dw = spr.width * PLAYER_SCALE, dh = spr.height * PLAYER_SCALE;
   const px = W / 2 + curveOff(P_PLAYER) + G.x * HALF_P;
-  const rough = G.crashT > 0 || (Math.abs(G.x) > OFFROAD_X && G.speed > 50);
+  const rough = G.crashT > 0 || G.jolt > 0 || (Math.abs(G.x) > OFFROAD_X && G.speed > 50);
   const shx = rough ? Math.round(rand(-1.5, 1.5)) : 0;
   const shy = rough ? Math.round(rand(-1, 1)) : (G.speed > 400 && (G.clock * 20 | 0) % 2 ? 1 : 0);
   const sx = Math.round(px - dw / 2) + shx, sy = PLAYER_Y - dh + shy;
@@ -1409,7 +1624,6 @@ function drawPlayer(env) {
   }
   ctx.drawImage(spr, sx, sy, dw, dh);
   ctx.globalAlpha = 1;
-  drawSnowCap(G.car.id, G.car.color, sx, sy, dw, dh, env);
   drawBacklight(G.car.id, G.car.color, sx, sy, dw, dh, env);
 
   // Lanternas: acesas à noite, na neblina e ao entardecer; mais fortes ao frear
@@ -1430,17 +1644,9 @@ function drawFogHalo(env) {
   ctx.globalCompositeOperation = 'source-over';
 }
 
-// Camada de neve acumulada no teto do carro
-function drawSnowCap(model, color, sx, sy, w, h, env) {
-  if (env.snow <= 0.01) return;
-  ctx.globalAlpha = env.snow;
-  ctx.drawImage(getSprite(model, color, 'snowcap'), sx, sy, w, h);
-  ctx.globalAlpha = 1;
-}
-
 function drawSpray(env) {
   for (const s of SPRAY) {
-    ctx.fillStyle = s.water ? `rgba(185,198,215,${(1 - s.t / s.life) * 0.7})` : `rgba(245,248,255,${(1 - s.t / s.life) * 0.9})`;
+    ctx.fillStyle = s.mud ? `rgba(118,70,42,${(1 - s.t / s.life) * 0.9})` : `rgba(185,198,215,${(1 - s.t / s.life) * 0.7})`;
     const sz = s.big ? 2 : 1;
     ctx.fillRect(Math.round(s.x), Math.round(s.y), sz, sz);
   }
@@ -1484,22 +1690,6 @@ function drawWetReflection(spr, sx, scale, alpha, radius, baseY) {
   }
   ctx.globalAlpha = 1;
   ctx.globalCompositeOperation = 'source-over';
-}
-
-// Flocos: pontos quando devagar, riscos quando em alta velocidade
-function drawSnow(env) {
-  ctx.lineCap = 'square';
-  for (const [near, width, alpha] of [[false, 1, 0.65], [true, 2, 0.95]]) {
-    ctx.strokeStyle = `rgba(255,255,255,${alpha * env.snow})`;
-    ctx.lineWidth = width;
-    ctx.beginPath();
-    for (const f of FLAKES) {
-      if ((f.z > 0.75) !== near) continue;
-      ctx.moveTo(f.px, f.py);
-      ctx.lineTo(f.x, f.y + 0.5);
-    }
-    ctx.stroke();
-  }
 }
 
 function drawBanner() {
@@ -1599,7 +1789,7 @@ function drawMenu() {
   text('>', GOAL_LINE.x + 90, ly, G.goalIdx < GOAL_OPTIONS.length - 1 ? '#ff9a2a' : '#555555');
   drawFlag(GOAL_LINE.x + 102, ly - 2, '#e03030');
 
-  if (blink) text('<>CARRO ^vCOR -+META ENTER:CORRER', W / 2, 214, '#ff9a2a', 8, 'center');
+  if (blink) text(touchMode ? 'TOQUE NO CARRO ESCOLHIDO: CORRER' : '<>CARRO ^vCOR -+META ENTER:CORRER', W / 2, 214, '#ff9a2a', 8, 'center');
   // Última linha: recorde, alternando com a dica do controle quando há um conectado
   const r = currentRecord();
   const padHint = Pad.id && (r.day === 0 || (G.clock / 3 | 0) % 2 === 1);
@@ -1627,6 +1817,7 @@ function drawOverlay(title, color, lines) {
 
 function render() {
   const env = G.env;
+  ui.root.classList.toggle('on', touchMode && G.state === 'playing');
   const playing = G.state !== 'menu' && G.state !== 'padconfig';
 
   ctx.save();
@@ -1636,13 +1827,13 @@ function render() {
 
   const fog = env.fog > 0.01;
   const haze = hazeAmt(env);
-  // A névoa que domina define a cor: neblina cinza, neve branca ou bruma rosada
-  [, hazeRGB, hazeHex] = [[env.fog, FOG_RGB, FOG_HEX], [env.snow * 0.5, SNOW_RGB, SNOW_HEX], [env.mist, MIST_RGB, MIST_HEX], [env.rain * 0.3, RAIN_RGB, RAIN_HEX]]
+  // A névoa que domina define a cor: neblina cinza, bruma rosada ou o cinza-azulado da chuva
+  [, hazeRGB, hazeHex] = [[env.fog, FOG_RGB, FOG_HEX], [env.mist, MIST_RGB, MIST_HEX], [env.rain * 0.3, RAIN_RGB, RAIN_HEX]]
     .reduce((best, h) => (h[0] > best[0] ? h : best));
   updateFogVis();
   drawSky(env);
   if (haze > 0.01) {
-    ctx.fillStyle = `rgba(${hazeRGB},${0.9 * env.fog + 0.35 * env.snow})`;
+    ctx.fillStyle = `rgba(${hazeRGB},${0.9 * env.fog})`;
     ctx.fillRect(0, 0, W, HORIZON);
   }
   // Horizonte da paisagem (com transição suave quando a paisagem muda)
@@ -1656,12 +1847,20 @@ function render() {
     drawHorizon(env, haze, G.themeIdx);
   }
   drawRoad(env);
+  drawHoles(env);
+  if (env.heat > 0.02) drawMirage(env);
   if (env.sun) drawSunGlare(env);
   if (env.night > 0.01) drawNightOverlay(env);
 
   // Carros, objetos da estrada e nuvens de neblina ordenados por profundidade (de longe para perto)
   const items = playing ? G.cars.map(c => ({ c, d: c.z - G.pos })).filter(o => o.d > 1) : [];
   items.push(...roadsideProps());
+  if (playing) {
+    for (const a of G.animals) {
+      const d = a.z - G.pos;
+      if (d > 1) items.push({ d, prop: `${a.coat}${a.frame}`, x: a.x, flip: a.flip, animal: true });
+    }
+  }
   if (fog) items.push(...fogPuffs(env));
   items.sort((a, b) => b.d - a.d);
   const drawItem = o => (o.puff ? drawPuff(o) : o.prop ? drawProp(o, env) : drawOpponent(o.c, o.d, env));
@@ -1675,7 +1874,6 @@ function render() {
     if (SPRAY.length) drawSpray(env);
   }
   for (const o of items) if (o.d <= D_PLAYER) drawItem(o);
-  if (env.snow > 0.01) drawSnow(env);
   if (env.rain > 0.01) drawRain(env);
   if (G.flash > 0.01) {
     ctx.fillStyle = `rgba(230,235,255,${0.45 * G.flash})`;
@@ -1696,7 +1894,9 @@ function render() {
   } else if (G.state === 'padconfig') {
     drawPadConfig();
   } else if (G.state === 'paused') {
-    drawOverlay('PAUSADO', '#ffd24a', [['P, ENTER OU START: CONTINUAR', '#ffffff'], ['ESC OU SELECT: MENU', '#aaaaaa']]);
+    drawOverlay('PAUSADO', '#ffd24a', touchMode
+      ? [['TOQUE: CONTINUAR', '#ffffff'], ['TOQUE EMBAIXO: MENU', '#aaaaaa']]
+      : [['P, ENTER OU START: CONTINUAR', '#ffffff'], ['ESC OU SELECT: MENU', '#aaaaaa']]);
   } else if (G.state === 'gameover') {
     const lines = [
       [`VOCÊ CHEGOU AO DIA ${G.day}`, '#ffffff'],
@@ -1705,7 +1905,7 @@ function render() {
       [`${G.passed} ULTRAPASSAGENS`, '#9fe07a'],
     ];
     lines.push([G.newRecord && blink ? 'NOVO RECORDE!' : '', '#ff9a2a']);
-    lines.push([blink ? 'ENTER: VOLTAR AO MENU' : '', '#aaaaaa']);
+    lines.push([blink ? (touchMode ? 'TOQUE: VOLTAR AO MENU' : 'ENTER: VOLTAR AO MENU') : '', '#aaaaaa']);
     drawOverlay('FIM DE JOGO', '#ff5040', lines);
   }
   if (G.toast) drawToast();
